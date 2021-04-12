@@ -1,0 +1,77 @@
+---
+title: "Упражнение 5 (часть 1)"
+author: "Нестерова А.И."
+date: "12 04 2021"
+output:
+  html_document:
+    self_contained: no
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Аналитический пакет R
+
+### Создание интерактивных картограмм
+
+Создать .Rmd скрипт, который генерирует html-отчёт с двумя картами:
+1. Картограмма с таблицей стран мира по показателю из базы Всемирного банка (интерактивная картограмма из примера).
+2. Карта с маркерами или с радиусами, построенная по набору данных с Портала открытых данных РФ.
+
+Данные для карт можно загружать из своего репозитория на github.com. Код загрузки данных с помощью API предоставлять необязательно, но если выкладываете его на github.com, не забудьте заново сгенерировать ключи API, чтобы никто не мог воспользоваться вашим логином.
+
+### Вариант-13
+
+WDI: любой показатель из раздела "Poverty" (Бедность). Портал открытых данных: Сведения о местах нахождения администраций муниципальных образований Амурской области (id: 2818002442-adresaadministraciy).
+
+```{r Загрузка пакетов, warning = F, message = F}
+# загрузка пакетов
+library('data.table')
+library('WDI')
+library('leaflet')
+# devtools::install_github('mages/googleVis')
+suppressPackageStartupMessages(library('googleVis'))
+```
+
+## Интерактивная картограмма №1
+
+### Построение интерактивной картограммы с таблицей стран мира по показателю Population living in slums из базы Всемирного банка 
+
+```{r Построение карты 1, results='asis', cache=TRUE}
+# загрузка данных по всем странам, 2018 год, показатель
+# Population living in slums (% of urban population)
+# Население, проживающее в трущобах (% от городского населения)
+indicator.code <- 'EN.POP.SLUM.UR.ZS'
+
+# загрузка данных с github
+file.URL <- 'https://raw.githubusercontent.com/alnesterova/Practice_5_R/main/data/DT_pop_liv_in_sl.csv'
+if (!file.exists('DT_pop_liv_in_sl.csv'))  download.file(file.URL, destfile = 'DT_pop_liv_in_sl.csv',
+                                           mode = 'wb', cacheOK = FALSE)
+DT <- data.table(read.csv('./DT_pop_liv_in_sl.csv', header=TRUE, sep = ','))
+
+# коды стран iso2
+fileURL <- 'https://pkgstore.datahub.io/core/country-list/data_csv/data/d7c9d7cfb42cb69f4422dec222dbbaa8/data_csv.csv'
+all.iso2.country.codes <- read.csv(fileURL, stringsAsFactors = FALSE, na.strings = '.')
+
+# убираем макрорегионы
+DT <- na.omit(DT[iso2c %in% all.iso2.country.codes$Code, ])
+
+# объект: таблица исходных данных
+g.table <- gvisTable(data = DT[, -'year'], 
+                     options = list(width = 300, height = 400))
+
+# объект интерактивная карта
+g.chart <- gvisGeoChart(data = DT, locationvar = 'iso2c',
+                        hovervar = 'country', 
+                        colorvar = indicator.code,
+                        options = list(width = 500, height = 400, dataMode = 'regions', 
+                                       colorAxis="{colors:['#FFEFD5', '#FF0000']}"))
+
+# размещаем таблицу и карту на одной панели (слева направо)
+TG <- gvisMerge(g.table, g.chart, horizontal = TRUE,
+                 tableOptions = 'bgcolor=\"CCCCCC\" cellspacing=10')
+
+# вставляем результат в html-документ
+TG
+```

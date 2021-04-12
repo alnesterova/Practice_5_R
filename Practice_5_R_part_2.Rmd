@@ -1,0 +1,61 @@
+---
+title: "Упражнение 5 (часть 2)"
+author: "Нестерова А.И."
+date: "12 04 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Аналитический пакет R
+
+### Создание интерактивных картограмм
+
+Создать .Rmd скрипт, который генерирует html-отчёт с двумя картами:
+1. Картограмма с таблицей стран мира по показателю из базы Всемирного банка (интерактивная картограмма из примера).
+2. Карта с маркерами или с радиусами, построенная по набору данных с Портала открытых данных РФ.
+
+Данные для карт можно загружать из своего репозитория на github.com. Код загрузки данных с помощью API предоставлять необязательно, но если выкладываете его на github.com, не забудьте заново сгенерировать ключи API, чтобы никто не мог воспользоваться вашим логином.
+
+### Вариант-13
+
+WDI: любой показатель из раздела "Poverty" (Бедность). Портал открытых данных: Сведения о местах нахождения администраций муниципальных образований Амурской области (id: 2818002442-adresaadministraciy).
+
+```{r Загрузка пакетов, warning = F, message = F}
+# загрузка пакетов
+library('leaflet')
+```
+
+## Интерактивная картограмма №2
+
+### Построение карты с маркерами о местах нахождения администраций муниципальных образований Амурской области
+
+```{r Построение карты 2, results='asis', cache=TRUE}
+# создание маркера с Евгением
+# обычный маркер - icon.png
+fileURL <-'https://raw.githubusercontent.com/alnesterova/Practice_5_R/main/data/Genius.png'
+pharm.icon <- makeIcon(iconUrl = fileURL,
+                      iconWidth = 56,
+                      iconHeight = 71,
+                      iconAnchorX = 56,
+                      iconAnchorY = 71)
+
+# загрузка данных о местах нахождения администраций муниципальных образований Амурской области
+fileURL <- 'https://raw.githubusercontent.com/alnesterova/Practice_5_R/main/data/administration_Am.csv'
+doc <- read.csv2(fileURL, stringsAsFactors = FALSE, encoding = 'UTF-8')
+
+# преобразование координат в числа
+doc$lat <- as.numeric(doc$lat)
+doc$long <- as.numeric(doc$long)
+
+# подписи к объектам
+map.sites <- paste0(doc$name)
+
+# создание виджета с картой
+map <- doc %>% leaflet(width =800, height =800) %>%
+  addTiles() %>% addMarkers(icon = pharm.icon, popup = map.sites)
+map
+```
